@@ -1,0 +1,5 @@
+lerna.json
+coverage
+dist
+node_modules
+/.nx/workspace-data

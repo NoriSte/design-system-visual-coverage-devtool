@@ -1,0 +1,37 @@
+# artefacts
+node_modules/
+generated/
+dist/
+coverage/
+yarn-error.log
+lerna-debug.log
+
+# temps
+.DS_Store
+*.pyc
+.idea/
+.mypy_cache/
+.stfolder/
+**/.vim/*
+*~
+\#*\#
+.\#*
+
+# yarn https://yarnpkg.com/getting-started/qa#which-files-should-be-gitignored
+**/.yarn/*
+!**/.yarn/patches
+!**/.yarn/releases
+!**/.yarn/plugins
+!**/.yarn/sdks
+!**/.yarn/versions
+**/.pnp.*
+
+# visual studio code
+.vscode/
+
+# AI tools
+.aider.*
+.aider*
+
+# Vitest browser mode failures
+**/__screenshots__/

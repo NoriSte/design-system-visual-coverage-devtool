@@ -1,0 +1,131 @@
+name: Staging
+on:
+  - pull_request
+concurrency:
+  group: ${{ github.ref }}
+  cancel-in-progress: true
+env:
+  AWS_REGION: us-east-1
+  PR_NUMBER: ${{ github.event.pull_request.number }}
+  RAVEN_ENVIRONMENT: STAGE
+  PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
+  CROWDIN_TOKEN: ${{ secrets.CROWDIN_TOKEN }}
+permissions:
+  contents: read # This is required for actions/checkout
+  id-token: write # This is required for requesting the JWT
+  pull-requests: write # This is required for actions-comment-pull-request
+jobs:
+  install-dependencies:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@v4
+      - name: Install dependencies
+        uses: ./.github/actions/install_cached
+  build:
+    runs-on: ubuntu-latest
+    needs: install-dependencies
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@v4
+      - name: Build packages
+        uses: ./.github/actions/build_cached
+  push-translations:
+    runs-on: ubuntu-latest
+    needs: install-dependencies
+    # We can't access secrets in Dependabot PRs, so we need to skip this job
+    if: ${{ github.actor != 'dependabot[bot]' }}
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@v4
+      - name: Restore dependencies cache
+        uses: ./.github/actions/install_cached
+      - name: Push translations
+        working-directory: packages/i18n
+        run: |
+          yarn trans:extract
+          yarn trans:validate
+          yarn trans:push --token ${{ env.CROWDIN_TOKEN }} --branch ${{ github.head_ref }}
+  lint:
+    runs-on: ubuntu-latest
+    needs: install-dependencies
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@v4
+      - name: Restore dependencies cache
+        uses: ./.github/actions/install_cached
+      - name: Lint
+        run: yarn lint
+  typecheck:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@v4
+      - name: Restore build cache
+        uses: ./.github/actions/build_cached
+      - name: Typecheck
+        run: yarn check:types
+  test:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@v4
+      - name: Restore build cache
+        uses: ./.github/actions/build_cached
+      - name: Install Playwright
+        run: npx playwright install chromium
+      - name: Test
+        run: yarn test
+  test-rsc:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@v4
+      - name: Restore build cache
+        uses: ./.github/actions/build_cached
+      - name: Test RSC
+        working-directory: examples/next-js
+        run: |
+          yarn
+          yarn build
+  preview-packages:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@v4
+      - name: Restore build cache
+        uses: ./.github/actions/build_cached
+      - name: Deploy preview packages
+        run: npx pkg-pr-new publish $(ls -d ./packages/*) --template './examples/*'
+        continue-on-error: true
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@v4
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v3
+        with:
+          role-to-assume: arn:aws:iam::789264700756:role/github-actions
+          role-session-name: deploy-ds-storybook-pr
+          aws-region: ${{ env.AWS_REGION }}
+      - name: Restore build cache
+        uses: ./.github/actions/build_cached
+      - name: Deploy static assets
+        run: scripts/deploy-static-assets.sh
+      - name: Deploy storybook
+        run: scripts/deploy-storybook.sh
+      - name: Post deploy comment
+        uses: thollander/actions-comment-pull-request@v2
+        with:
+          comment_tag: deploy_comment
+          mode: recreate
+          message: |
+            Storybook has been published for testing :rocket:
+
+            https://ds.staging.preply.org/${{ github.event.pull_request.number }}

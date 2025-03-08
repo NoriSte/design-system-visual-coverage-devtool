@@ -1,0 +1,145 @@
+name: Production
+on:
+  pull_request:
+    types:
+      - closed
+    branches:
+      - main
+env:
+  AWS_REGION: eu-west-1
+  RAVEN_ENVIRONMENT: PROD
+  NPM_AUTH_TOKEN: ${{ secrets.NPM_AUTH_TOKEN }}
+  PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
+  CROWDIN_TOKEN: ${{ secrets.CROWDIN_TOKEN }}
+permissions:
+  contents: read # This is required for actions/checkout
+  id-token: write # This is required for requesting the JWT
+  pull-requests: write # This is required for actions-comment-pull-request
+jobs:
+  install-dependencies:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@v4
+      - name: Install dependencies
+        uses: ./.github/actions/install_cached
+  build:
+    runs-on: ubuntu-latest
+    needs: install-dependencies
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@v4
+      - name: Build packages
+        uses: ./.github/actions/build_cached
+  push-translations:
+    runs-on: ubuntu-latest
+    needs: install-dependencies
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@v4
+      - name: Restore dependencies cache
+        uses: ./.github/actions/install_cached
+      - name: Push translations
+        working-directory: packages/i18n
+        run: |
+          yarn trans:extract
+          yarn trans:push --token ${{ env.CROWDIN_TOKEN }} --branch master
+  lint:
+    runs-on: ubuntu-latest
+    needs: install-dependencies
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@v4
+      - name: Restore dependencies cache
+        uses: ./.github/actions/install_cached
+      - name: Lint
+        run: yarn lint
+  typecheck:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@v4
+      - name: Restore build cache
+        uses: ./.github/actions/build_cached
+      - name: Typecheck
+        run: yarn check:types
+  test:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@v4
+      - name: Restore build cache
+        uses: ./.github/actions/build_cached
+      - name: Install Playwright
+        run: npx playwright install chromium
+      - name: Test
+        run: yarn test
+  test-rsc:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@v4
+      - name: Restore build cache
+        uses: ./.github/actions/build_cached
+      - name: Test RSC
+        working-directory: examples/next-js
+        run: |
+          yarn
+          yarn build
+  publish:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@v4
+      - name: Restore build cache
+        uses: ./.github/actions/build_cached
+      - name: Publish to NPM
+        run: |
+          npm whoami
+          yarn publish:current
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@v4
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v3
+        with:
+          role-to-assume: arn:aws:iam::537716077656:role/github-actions
+          role-session-name: deploy-ds-storybook-prod
+          aws-region: ${{ env.AWS_REGION }}
+      - name: Restore build cache
+        uses: ./.github/actions/build_cached
+      - name: Deploy static assets
+        run: scripts/deploy-static-assets.sh
+      - name: Deploy storybook
+        run: scripts/deploy-storybook.sh
+      - name: Post deploy comment
+        uses: thollander/actions-comment-pull-request@v2
+        with:
+          comment_tag: success_comment
+          mode: recreate
+          message: |
+            Production storybook has been deployed :rocket:
+
+            https://ds.preply.org/
+  deploy-rn:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@v4
+      - name: Restore build cache
+        uses: ./.github/actions/build_cached
+      # A simplified version of update-reactnative-storybook follows
+      - name: RN STORYBOOK -- Install EAS CLI
+        run: npm install -g eas-cli
+      - name: RN STORYBOOK -- EAS Update
+        working-directory: ./support/rn-expo
+        run: |
+          EXPO_TOKEN=${{ secrets.EXPO_TOKEN }} eas update --auto

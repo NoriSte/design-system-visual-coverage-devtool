@@ -1,0 +1,68 @@
+name: Canary
+on:
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: "Pull Request Number"
+        required: true
+
+jobs:
+  CanaryDeploy:
+    timeout-minutes: 15
+    env:
+      AWS_REGION: eu-west-1
+      RAVEN_ENVIRONMENT: PROD
+      NPM_AUTH_TOKEN: ${{ secrets.NPM_AUTH_TOKEN }}
+      PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
+    permissions:
+      contents: read # This is required for actions/checkout
+      id-token: write # This is required for requesting the JWT
+      pull-requests: write # This is required for actions-comment-pull-request
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@v4
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v3
+        with:
+          role-to-assume: arn:aws:iam::537716077656:role/github-actions
+          role-session-name: deploy-ds-storybook-prod
+          aws-region: ${{ env.AWS_REGION }}
+      - name: Build packages
+        uses: ./.github/actions/build_cached
+      - name: Publish to NPM
+        run: |
+          npm whoami
+          yarn publish:canary --summary-file ${{ runner.temp }}
+      - name: Parse versions
+        run: |
+          VERSIONS=$(cat ${{ runner.temp }}/lerna-publish-summary.json | jq -r "map({ (.packageName): .version }) | add")
+          echo "VERSIONS<<EOF" >> $GITHUB_ENV
+          echo "$VERSIONS" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+      - name: On Success
+        if: success()
+        uses: thollander/actions-comment-pull-request@v2
+        with:
+          comment_tag: success_canary_comment
+          mode: recreate
+          message: |
+            Canary version is published :rocket:
+
+            https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+            ```json
+            ${{ env.VERSIONS }}
+            ```
+          pr_number: ${{ github.event.inputs.pr_number }}
+      - name: On Failure
+        if: failure()
+        uses: thollander/actions-comment-pull-request@v2
+        with:
+          comment_tag: failure_canary_comment
+          mode: recreate
+          message: |
+            Failed to publish canary package :sob:
+
+            https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          pr_number: ${{ github.event.inputs.pr_number }}

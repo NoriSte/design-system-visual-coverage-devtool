@@ -1,0 +1,34 @@
+name: PR commands
+on:
+  issue_comment:
+    types: [created]
+jobs:
+  PRCommands:
+    if: github.event.issue.pull_request
+    name: Handle PR commands
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read        # This is required for actions/checkout
+      pull-requests: write  # This is required for actions/create-or-update-pr-comment
+      actions: write        # This is required for gh workflow run
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@v4
+      - name: Canary
+        if: startsWith(github.event.comment.body, '/canary')
+        uses: ./.github/actions/workflow_dispatch_from_comment
+        with:
+          workflow: 'canary.yml'
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Chromatic
+        if: startsWith(github.event.comment.body, '/chromatic')
+        uses: ./.github/actions/workflow_dispatch_from_comment
+        with:
+          workflow: 'visual_tests.yml'
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: ReactNative
+        if: startsWith(github.event.comment.body, '/reactnative')
+        uses: ./.github/actions/workflow_dispatch_from_comment
+        with:
+          workflow: 'update-reactnative-storybook.yml'
+          github-token: ${{ secrets.GITHUB_TOKEN }}
