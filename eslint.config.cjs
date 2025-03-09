@@ -15,7 +15,6 @@ const tsParser = require('@typescript-eslint/parser');
 const vitest = require('eslint-plugin-vitest');
 const serverComponents = require('eslint-plugin-react-server-components');
 const formatjs = require('eslint-plugin-formatjs');
-const intlForceIdPrefix = require('@noriste/ds-eslint-plugin-intl-force-id-prefix');
 
 const compat = new FlatCompat();
 

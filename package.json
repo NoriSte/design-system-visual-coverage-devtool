@@ -34,7 +34,6 @@
         "@eslint/compat": "^1.2.6",
         "@eslint/js": "^9.20.0",
         "@pixi/rollup-plugin-rename-node-modules": "^2.0.0",
-        "@noriste/ds-eslint-plugin-intl-force-id-prefix": "workspace:*",
         "@rollup/plugin-image": "^3.0.3",
         "@rollup/plugin-node-resolve": "^16.0.0",
         "@storybook/cli": "8.5.8",

@@ -23,16 +23,10 @@
         "dev": "run build:rollup -w"
     },
     "peerDependencies": {
-        "@noriste/ds-visual-coverage-core": "1.2.1",
-        "@noriste/ds-visual-coverage-preply": "1.2.1",
-        "@noriste/ds-visual-coverage-rn": "1.2.1",
         "react": "^16 || ^18"
     },
     "gitHead": "43a57736ab7534349a8a7224e2ae426110af95cc",
     "devDependencies": {
-        "@noriste/ds-visual-coverage-core": "workspace:*",
-        "@noriste/ds-visual-coverage-preply": "workspace:*",
-        "@noriste/ds-visual-coverage-rn": "workspace:*",
         "@vitest/coverage-istanbul": "^3.0.4",
         "react": "^18.2.0"
     }
