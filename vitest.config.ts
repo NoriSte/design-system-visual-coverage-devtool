@@ -9,25 +9,29 @@ export const browserTestGlob = '**/*.browser.test.?(c|m)[jt]s?(x)';
 export const reactBrowserTestGlob = '**/*.react.browser.test.?(c|m)[jt]s?(x)'; // automatically included in browserTestGlob
 
 export default defineConfig({
-    plugins: [
-        svgr({
-            svgrOptions: {
-                exportType: 'default',
-                ref: true,
-                svgo: false,
-                titleProp: true,
-            },
-            include: '**/*.svg',
-        }),
-    ],
-    test: {
-        // Browser tests must be run in a browser environment, not the default jsdom.
-        exclude: [browserTestGlob],
-        environment: 'jsdom',
-        globals: true,
-        setupFiles: [path.join(__dirname, './vitest.setup.ts')],
-        coverage: {
-            exclude: ['**/*.test.ts', '**/*.test.tsx'],
-        },
+  plugins: [
+    svgr({
+      svgrOptions: {
+        exportType: 'default',
+        ref: true,
+        svgo: false,
+        titleProp: true,
+      },
+      include: '**/*.svg',
+    }),
+  ],
+  test: {
+    // Browser tests must be run in a browser environment, not the default jsdom.
+    exclude: [browserTestGlob],
+    globals: true,
+    setupFiles: [path.join(__dirname, './vitest.setup.ts')],
+    coverage: {
+      exclude: ['**/*.test.ts', '**/*.test.tsx'],
     },
+    browser: {
+      provider: 'playwright',
+      enabled: true,
+      instances: [{ browser: 'chromium' }],
+    },
+  },
 });

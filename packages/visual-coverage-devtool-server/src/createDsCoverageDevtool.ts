@@ -1,14 +1,24 @@
 import { createActor, setup } from 'xstate';
 
-export function createDsCoverageDevtool() {
+type Events = { type: 'start' };
+type Context = Record<string, unknown>;
+
+export function createDsCoverageDevtool(options: {
+  // The function is left unsigned until XState typegen supports V5 https://stately.ai/docs/typegen
+  // At that point, the consumer won't need to call `getState` from inside it (which is a workaround
+  // to keep everything typed at the moment)
+  onUpdate?: () => void;
+}) {
+  const { onUpdate } = options;
+
   const devtoolMachine = setup({
     types: {
-      context: {} as { count: number },
-      events: {} as { type: 'start' },
+      context: {} as Context,
+      events: {} as Events,
     },
   }).createMachine({
     id: 'dsCoverageDevtool',
-    context: { count: 0 },
+    context: {},
     initial: 'idle',
     states: {
       idle: {
@@ -22,27 +32,25 @@ export function createDsCoverageDevtool() {
     },
   });
 
-  console.log({ devtoolMachine });
-
-  // Create an actor (running instance of the machine)
   const actor = createActor(devtoolMachine).start();
 
   // Subscribe to state changes
   actor.subscribe(snapshot => {
-    console.log('Current state:', snapshot.value);
-    // console.log('Last event:', snapshot.event); // Last received event
+    console.log('Current state:', snapshot);
+
+    onUpdate?.();
   });
 
   function getState() {
     const snapshot = actor.getSnapshot();
     const { value, context } = snapshot;
-    console.log('getState', snapshot);
+
+    // console.log('getState', snapshot);
     return { value, context };
   }
+
   function start() {
-    return actor.send({
-      type: 'start',
-    });
+    actor.send({ type: 'start' });
   }
 
   return { getState, start };
