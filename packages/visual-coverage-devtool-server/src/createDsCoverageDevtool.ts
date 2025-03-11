@@ -1,7 +1,11 @@
 import { createActor, setup } from 'xstate';
+import type { Configuration } from './types';
+import { defaultConfig } from './config/constants';
 
 type Events = { type: 'start' };
-type Context = Record<string, unknown>;
+type Context = Configuration & {};
+
+export const initialContext: Context = { ...defaultConfig };
 
 export function createDsCoverageDevtool(options: {
   // The function is left unsigned until XState typegen supports V5 https://stately.ai/docs/typegen
@@ -18,7 +22,7 @@ export function createDsCoverageDevtool(options: {
     },
   }).createMachine({
     id: 'dsCoverageDevtool',
-    context: {},
+    context: initialContext,
     initial: 'idle',
     states: {
       idle: {
@@ -38,6 +42,7 @@ export function createDsCoverageDevtool(options: {
   actor.subscribe(snapshot => {
     console.log('Current state:', snapshot);
 
+    // It would be good to split the sent events from the XState events, but let's implement it first
     onUpdate?.();
   });
 

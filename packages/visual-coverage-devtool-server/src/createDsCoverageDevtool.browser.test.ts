@@ -1,5 +1,5 @@
 import { describe, test } from 'vitest';
-import { createDsCoverageDevtool } from './createDsCoverageDevtool';
+import { createDsCoverageDevtool, initialContext } from './createDsCoverageDevtool';
 
 // TODO: check all the extension-side features
 // TODO: check all the UI features
@@ -40,8 +40,7 @@ function createDsCoverageDebugger(options: CreateDsCoverageDebuggerOptions) {
 // ----------
 
 describe('createDsCoverageDevtool', () => {
-  test(`TempTest`, () => {});
-  describe.todo(`When created`, () => {
+  describe(`When created`, () => {
     test(`it's in idle state`, () => {
       // Arrange
       const onUpdateMock = vi.fn();
@@ -49,16 +48,33 @@ describe('createDsCoverageDevtool', () => {
       const { getState } = dsCoverageDevtool;
 
       // Assert
-      const expectedResult: ReturnType<typeof getState> = {
-        context: {},
-        value: 'idle',
-      };
+      const expectedResult: ReturnType<typeof getState>['value'] = 'idle';
 
       expect(onUpdateMock).not.toHaveBeenCalled();
-      expect(getState()).toEqual(expectedResult);
+      expect(getState().value).toEqual(expectedResult);
     });
 
     test(`then it sends an event with the current state`, () => {
+      // Arrange
+      const onUpdateMock = vi.fn();
+      const dsCoverageDevtool = createDsCoverageDevtool({ onUpdate: onUpdateMock });
+      const { start } = dsCoverageDevtool;
+
+      // Act
+      start();
+
+      // Assert
+      // const expectedResult: ReturnType<typeof getState> = {
+      //   context: initialContext,
+      //   value: 'start',
+      // };
+
+      expect(onUpdateMock).toHaveBeenCalledOnce();
+      // TODO: once onUpdate will be called with the updated state...
+      // expect(onUpdateMock).toHaveBeenCalledExactlyOnceWith(expectedResult);
+    });
+
+    test(`then its configuration is empty`, () => {
       // Arrange
       const onUpdateMock = vi.fn();
       const dsCoverageDevtool = createDsCoverageDevtool({ onUpdate: onUpdateMock });
@@ -68,13 +84,9 @@ describe('createDsCoverageDevtool', () => {
       start();
 
       // Assert
-      const expectedResult: ReturnType<typeof getState> = {
-        context: {},
-        value: 'start',
-      };
+      const expectedResult = initialContext;
 
-      expect(onUpdateMock).toHaveBeenCalledOnce();
-      expect(getState()).toEqual(expectedResult);
+      expect(getState().context).toEqual(expectedResult);
     });
 
     // THESE ARE UI STATES, not debugger states
@@ -125,27 +137,27 @@ describe('createDsCoverageDevtool', () => {
     });
 
     // useful when the user opens the settings to check the current configuration, maybe after tey get an error after running the coverage
-    describe(`and asked to check the global DS coverage functions`, () => {
-      describe(`and the passed getComponentInfo doesn't work as expected`, () => {
+    describe.todo(`and asked to check the global DS coverage functions`, () => {
+      describe.todo(`and the passed getComponentInfo doesn't work as expected`, () => {
         test.todo(`then it gets a full list of the errors`);
       });
 
-      describe(`and the passed getCoverageContainerInfo doesn't work as expected`, () => {
+      describe.todo(`and the passed getCoverageContainerInfo doesn't work as expected`, () => {
         test.todo(`then it gets a full list of the errors`);
       });
 
-      describe(`and the passed getCoverageContainers doesn't work as expected`, () => {
+      describe.todo(`and the passed getCoverageContainers doesn't work as expected`, () => {
         test.todo(`then it gets a full list of the errors`);
       });
 
-      describe(`and the configuration works as expected`, () => {
+      describe.todo(`and the configuration works as expected`, () => {
         test.todo(`then it gets a confirmation`);
       });
 
       // Isn't a result -> company-specific result converter missing?
     });
 
-    describe(`and configured`, () => {
+    describe.todo(`and configured`, () => {
       test.todo(`then it immediately calls updateStoredConfiguration`);
 
       test.todo(`then it immediately calls getCoverageContainers`);
@@ -154,7 +166,7 @@ describe('createDsCoverageDevtool', () => {
 
       test.todo(`then it sends an event with the current state`);
 
-      describe(`and asked to get the coverage containers list`, () => {
+      describe.todo(`and asked to get the coverage containers list`, () => {
         test.todo(`then it immediately calls getCoverageContainers`);
 
         test.todo(`then it sends the current list of coverage containers`);
@@ -163,13 +175,13 @@ describe('createDsCoverageDevtool', () => {
 
         test.todo(`then it sends an event with the current state`);
 
-        describe(`and some coverage containers have the same attribute value`, () => {
+        describe.todo(`and some coverage containers have the same attribute value`, () => {
           // TODO: error
         });
       });
 
-      describe(`and it's asked to refresh the coverage containers list`, () => {
-        describe(`and some coverage containers are missing`, () => {
+      describe.todo(`and it's asked to refresh the coverage containers list`, () => {
+        describe.todo(`and some coverage containers are missing`, () => {
           test.todo(`then it immediately calls getCoverageContainers`);
 
           test.todo(`then it gets all the current and previous containers`);
@@ -179,7 +191,7 @@ describe('createDsCoverageDevtool', () => {
           test.todo(`then it sends an event with the current state`);
         });
 
-        describe(`and some new coverage containers are available`, () => {
+        describe.todo(`and some new coverage containers are available`, () => {
           test.todo(`then it immediately calls getCoverageContainers`);
 
           test.todo(`then it gets all the current and previous containers`);
@@ -191,46 +203,49 @@ describe('createDsCoverageDevtool', () => {
       });
     });
 
-    describe(`and a full debugger configuration is available`, () => {
+    describe.todo(`and a full debugger configuration is available`, () => {
       // Configuration includes the slowmo timeout, etc.
       // TODO:
 
-      describe(`and it's asked to launch the DS coverage on a specific coverage container`, () => {
-        describe(`and the DS coverage doesn't encounter errors`, () => {
-          test.todo(`then it launches the DS coverage on the coverage container`);
-
-          test.todo(`then it forwards all the events coming from the DS coverage`);
-
-          test.todo(`then it sends an event with the results`);
-        });
-
-        describe(`and the DS coverage encounters errors`, () => {
-          test.todo(`then it sends an event with the errors`);
-        });
-
-        describe(`and it's asked to stop the DS coverage`, () => {
-          test.todo(`then it launches the DS coverage on the coverage container`);
-
-          test.todo(`then it stops the DS coverage`);
-
-          describe(`and it's asked to stop the DS coverage`, () => {
-            test.todo(`then it launches the DS coverage on the coverage container again`);
+      describe.todo(
+        `and it's asked to launch the DS coverage on a specific coverage container`,
+        () => {
+          describe.todo(`and the DS coverage doesn't encounter errors`, () => {
+            test.todo(`then it launches the DS coverage on the coverage container`);
 
             test.todo(`then it forwards all the events coming from the DS coverage`);
 
             test.todo(`then it sends an event with the results`);
-
-            test.todo(`then it didn't send any extra event from the stopped DS coverage`);
           });
-        });
-      });
 
-      describe(`and it's disposed`, () => {
+          describe.todo(`and the DS coverage encounters errors`, () => {
+            test.todo(`then it sends an event with the errors`);
+          });
+
+          describe.todo(`and it's asked to stop the DS coverage`, () => {
+            test.todo(`then it launches the DS coverage on the coverage container`);
+
+            test.todo(`then it stops the DS coverage`);
+
+            describe.todo(`and it's asked to stop the DS coverage`, () => {
+              test.todo(`then it launches the DS coverage on the coverage container again`);
+
+              test.todo(`then it forwards all the events coming from the DS coverage`);
+
+              test.todo(`then it sends an event with the results`);
+
+              test.todo(`then it didn't send any extra event from the stopped DS coverage`);
+            });
+          });
+        },
+      );
+
+      describe.todo(`and it's disposed`, () => {
         test.todo(`then it launches the DS coverage on the coverage container`);
 
         test.todo(`then it stops the DS coverage`);
 
-        describe(`and it's asked to stop the DS coverage`, () => {
+        describe.todo(`and it's asked to stop the DS coverage`, () => {
           test.todo(`then it launches the DS coverage on the coverage container again`);
 
           test.todo(`then it forwards all the events coming from the DS coverage`);
@@ -242,8 +257,8 @@ describe('createDsCoverageDevtool', () => {
       });
     });
 
-    describe(`and it's asked to launch the DS coverage on the HTML body`, () => {
-      describe(`and the DS coverage doesn't encounter errors`, () => {
+    describe.todo(`and it's asked to launch the DS coverage on the HTML body`, () => {
+      describe.todo(`and the DS coverage doesn't encounter errors`, () => {
         test.todo(`then it launches the DS coverage on the HTML body`);
 
         test.todo(`then it forwards all the events coming from the DS coverage`);
@@ -253,7 +268,7 @@ describe('createDsCoverageDevtool', () => {
       });
     });
 
-    describe(`and it's asked to launch the DS coverage on all the containers`, () => {
+    describe.todo(`and it's asked to launch the DS coverage on all the containers`, () => {
       test.todo(`then it launches the DS coverage on all the coverage containers`);
 
       test.todo(`then it forwards all the events coming from the DS coverage`);
@@ -262,178 +277,187 @@ describe('createDsCoverageDevtool', () => {
       test.todo(`then it sends an event with the results`);
     });
 
-    describe(`and it's asked to launch the DS coverage step by step with only the "find containers" option enabled`, () => {
-      test.todo(`then it launches the DS coverage on all the coverage containers`);
+    describe.todo(
+      `and it's asked to launch the DS coverage step by step with only the "find containers" option enabled`,
+      () => {
+        test.todo(`then it launches the DS coverage on all the coverage containers`);
 
-      test.todo(`then it sends an event containing the first coverage container data`);
+        test.todo(`then it sends an event containing the first coverage container data`);
 
-      test.todo(`then it draws an SVG in page`);
-
-      test.todo(`then it pauses`);
-
-      describe(`and it's resumed`, () => {
-        test.todo(`then it sends an event containing the seconds coverage container data`);
-
-        // Drawing SVGs should have a dedicated option
         test.todo(`then it draws an SVG in page`);
 
         test.todo(`then it pauses`);
 
-        describe(`and it's resumed`, () => {
-          test.todo(`then it sends an event containing the third coverage container data`);
+        describe.todo(`and it's resumed`, () => {
+          test.todo(`then it sends an event containing the seconds coverage container data`);
 
+          // Drawing SVGs should have a dedicated option
           test.todo(`then it draws an SVG in page`);
 
           test.todo(`then it pauses`);
 
-          describe(`and it's resumed`, () => {
-            test.todo(`then it run the DS coverage up to completion`);
+          describe.todo(`and it's resumed`, () => {
+            test.todo(`then it sends an event containing the third coverage container data`);
 
-            // Sending the bitmap should de a dedicated option, it should not be sent by default
-            test.todo(`then it sends an event with the results, including the bitmap`);
+            test.todo(`then it draws an SVG in page`);
+
+            test.todo(`then it pauses`);
+
+            describe.todo(`and it's resumed`, () => {
+              test.todo(`then it run the DS coverage up to completion`);
+
+              // Sending the bitmap should de a dedicated option, it should not be sent by default
+              test.todo(`then it sends an event with the results, including the bitmap`);
+            });
           });
         });
-      });
-    });
+      },
+    );
 
-    describe(`and it's asked to launch the DS coverage step by step with only the "get element size" option enabled`, () => {
-      test.todo(`then it launches the DS coverage on all the coverage containers`);
+    describe.todo(
+      `and it's asked to launch the DS coverage step by step with only the "get element size" option enabled`,
+      () => {
+        test.todo(`then it launches the DS coverage on all the coverage containers`);
 
-      test.todo(
-        `then it sends an event containing the first element data, including the first coverage container data`,
-      );
-
-      test.todo(`then it draws an SVG in page`);
-
-      test.todo(`then it pauses`);
-
-      describe(`and it's resumed`, () => {
         test.todo(
-          `then it sends an event containing the second element data, including the first coverage container data`,
+          `then it sends an event containing the first element data, including the first coverage container data`,
         );
 
         test.todo(`then it draws an SVG in page`);
 
         test.todo(`then it pauses`);
 
-        describe(`and it's resumed`, () => {
+        describe.todo(`and it's resumed`, () => {
           test.todo(
-            `then it sends an event containing the third element data, including the first coverage container data`,
+            `then it sends an event containing the second element data, including the first coverage container data`,
           );
 
           test.todo(`then it draws an SVG in page`);
 
           test.todo(`then it pauses`);
 
-          describe(`and it's resumed`, () => {
+          describe.todo(`and it's resumed`, () => {
             test.todo(
-              `then it sends an event containing the first element data, including the second coverage container data`,
+              `then it sends an event containing the third element data, including the first coverage container data`,
             );
 
             test.todo(`then it draws an SVG in page`);
 
             test.todo(`then it pauses`);
 
-            describe(`and it's resumed`, () => {
+            describe.todo(`and it's resumed`, () => {
               test.todo(
-                `then it sends an event containing the second element data, including the second coverage container data`,
+                `then it sends an event containing the first element data, including the second coverage container data`,
               );
 
               test.todo(`then it draws an SVG in page`);
 
               test.todo(`then it pauses`);
 
-              describe(`and it's resumed`, () => {
+              describe.todo(`and it's resumed`, () => {
                 test.todo(
-                  `then it sends an event containing the third element data, including the second coverage container data`,
+                  `then it sends an event containing the second element data, including the second coverage container data`,
                 );
 
                 test.todo(`then it draws an SVG in page`);
 
                 test.todo(`then it pauses`);
 
-                describe(`and it's resumed`, () => {
-                  test.todo(`then it run the DS coverage up to completion`);
+                describe.todo(`and it's resumed`, () => {
+                  test.todo(
+                    `then it sends an event containing the third element data, including the second coverage container data`,
+                  );
 
-                  // Sending the bitmap should de a dedicated option, it should not be sent by default
-                  test.todo(`then it sends an event with the results, including the bitmap`);
+                  test.todo(`then it draws an SVG in page`);
+
+                  test.todo(`then it pauses`);
+
+                  describe.todo(`and it's resumed`, () => {
+                    test.todo(`then it run the DS coverage up to completion`);
+
+                    // Sending the bitmap should de a dedicated option, it should not be sent by default
+                    test.todo(`then it sends an event with the results, including the bitmap`);
+                  });
                 });
               });
             });
           });
         });
-      });
-    });
+      },
+    );
 
     // TODO: it should allow to remove or to keep the previous SVGs
     // TODO: it should remove all the previous SVGs when relaunched
-    describe(`and it's asked to launch the DS coverage step by step with the "get element size" and "bitmap preview" options enabled`, () => {
-      test.todo(`then it launches the DS coverage on all the coverage containers`);
+    describe.todo(
+      `and it's asked to launch the DS coverage step by step with the "get element size" and "bitmap preview" options enabled`,
+      () => {
+        test.todo(`then it launches the DS coverage on all the coverage containers`);
 
-      test.todo(
-        `then it sends an event containing the first element data, including the first coverage container data, and the bitmap`,
-      );
-
-      test.todo(`then it draws an SVG in page`);
-
-      test.todo(`then it pauses`);
-
-      describe(`and it's resumed`, () => {
         test.todo(
-          `then it sends an event containing the second element data, including the first coverage container data, and the bitmap`,
+          `then it sends an event containing the first element data, including the first coverage container data, and the bitmap`,
         );
 
         test.todo(`then it draws an SVG in page`);
 
         test.todo(`then it pauses`);
 
-        describe(`and it's resumed`, () => {
+        describe.todo(`and it's resumed`, () => {
           test.todo(
-            `then it sends an event containing the third element data, including the first coverage container data, and the bitmap`,
+            `then it sends an event containing the second element data, including the first coverage container data, and the bitmap`,
           );
 
           test.todo(`then it draws an SVG in page`);
 
           test.todo(`then it pauses`);
 
-          describe(`and it's resumed`, () => {
+          describe.todo(`and it's resumed`, () => {
             test.todo(
-              `then it sends an event containing the first element data, including the second coverage container data, and the bitmap`,
+              `then it sends an event containing the third element data, including the first coverage container data, and the bitmap`,
             );
 
             test.todo(`then it draws an SVG in page`);
 
             test.todo(`then it pauses`);
 
-            describe(`and it's resumed`, () => {
+            describe.todo(`and it's resumed`, () => {
               test.todo(
-                `then it sends an event containing the second element data, including the second coverage container data, and the bitmap`,
+                `then it sends an event containing the first element data, including the second coverage container data, and the bitmap`,
               );
 
               test.todo(`then it draws an SVG in page`);
 
               test.todo(`then it pauses`);
 
-              describe(`and it's resumed`, () => {
+              describe.todo(`and it's resumed`, () => {
                 test.todo(
-                  `then it sends an event containing the third element data, including the second coverage container data, and the bitmap`,
+                  `then it sends an event containing the second element data, including the second coverage container data, and the bitmap`,
                 );
 
                 test.todo(`then it draws an SVG in page`);
 
                 test.todo(`then it pauses`);
 
-                describe(`and it's resumed`, () => {
-                  test.todo(`then it run the DS coverage up to completion`);
+                describe.todo(`and it's resumed`, () => {
+                  test.todo(
+                    `then it sends an event containing the third element data, including the second coverage container data, and the bitmap`,
+                  );
 
-                  // Sending the bitmap should de a dedicated option, it should not be sent by default
-                  test.todo(`then it sends an event with the results, including the bitmap`);
+                  test.todo(`then it draws an SVG in page`);
+
+                  test.todo(`then it pauses`);
+
+                  describe.todo(`and it's resumed`, () => {
+                    test.todo(`then it run the DS coverage up to completion`);
+
+                    // Sending the bitmap should de a dedicated option, it should not be sent by default
+                    test.todo(`then it sends an event with the results, including the bitmap`);
+                  });
                 });
               });
             });
           });
         });
-      });
-    });
+      },
+    );
   });
 });
