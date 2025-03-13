@@ -1,6 +1,7 @@
 // import { createCalculateDsVisualCoverages } from '@preply/ds-visual-coverage-preply-web';
 
 export interface ReferencesToGlobals {
+  coverageContainerDomAttribute: string;
   createCalculateDsVisualCoverages: string;
 }
 

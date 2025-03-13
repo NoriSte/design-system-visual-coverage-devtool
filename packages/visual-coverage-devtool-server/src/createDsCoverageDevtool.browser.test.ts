@@ -3,6 +3,7 @@ import { createDsCoverageDevtool, initialContext } from './createDsCoverageDevto
 import { defaultConfiguration, exposedReferencesToGlobalsContainer } from './config/constants';
 import type { Configuration, ReferencesToGlobals } from './types';
 import { createCalculateDsVisualCoverages } from '@preply/ds-visual-coverage-preply-web';
+import { getDefaultReferencesToGlobals } from './config/getDefaultReferencesToGlobals';
 
 // TODO: check all the extension-side features
 // TODO: check all the UI features
@@ -42,11 +43,16 @@ function createDsCoverageDebugger(options: CreateDsCoverageDebuggerOptions) {
 }
 // ----------
 
+// TODO: import it from Preply package
+const coverageContainerDomAttribute = 'data-preply-ds-coverage-container';
+
 function createPageEnvironment() {
   // Create the fake page environment
   const referencesToGlobals: Record<keyof ReferencesToGlobals, unknown> = {
+    coverageContainerDomAttribute,
     createCalculateDsVisualCoverages,
   };
+
   globalThis[exposedReferencesToGlobalsContainer] = referencesToGlobals;
 
   return {
@@ -55,6 +61,21 @@ function createPageEnvironment() {
     },
   };
 }
+
+function createPage({ id, html }: { id: string; html: string }) {
+  const rootElement = document.createElement('div');
+  rootElement.id = id;
+  rootElement.innerHTML = html;
+  document.body.appendChild(rootElement);
+
+  return {
+    rootElement,
+    cleanup: () => {
+      document.body.removeChild(rootElement);
+    },
+  };
+}
+
 function createDevtool() {
   const onUpdateMock = vi.fn();
   const dsCoverageDevtool = createDsCoverageDevtool({ onUpdate: onUpdateMock });
@@ -177,6 +198,8 @@ describe('createDsCoverageDevtool', () => {
 
             // Assert
             const expectedResult: ReferencesToGlobals = {
+              coverageContainerDomAttribute:
+                'globalThis.__DS_VISUAL_COVERAGE_DEVTOOLS__.coverageContainerDomAttribute',
               createCalculateDsVisualCoverages:
                 'globalThis.__DS_VISUAL_COVERAGE_DEVTOOLS__.createCalculateDsVisualCoverages',
             };
@@ -220,10 +243,10 @@ describe('createDsCoverageDevtool', () => {
 
           test(`then it accept an external configuration for the global DS coverage functions`, async () => {
             // Arrange
+            const { cleanup } = createPageEnvironment();
+
             const configuration: Configuration = {
-              referencesToGlobals: {
-                createCalculateDsVisualCoverages: 'fakeReference',
-              },
+              referencesToGlobals: getDefaultReferencesToGlobals(),
             };
             const { dsCoverageDevtool } = createDevtool();
             const { getState, start, setInitialConfiguration } = dsCoverageDevtool;
@@ -236,6 +259,8 @@ describe('createDsCoverageDevtool', () => {
             // Assert
             const expectedState: ReturnType<typeof getState>['value'] = 'configured';
             expect(getState().value).toEqual(expectedState);
+
+            cleanup();
           });
         });
       });
@@ -263,24 +288,41 @@ describe('createDsCoverageDevtool', () => {
     });
 
     describe(`and configured`, () => {
-      test(`then it immediately calls updateStoredConfiguration`, async () => {
+      // TODO: this is more a test for the between the devtool server and the devtool middleware (part of the browser extension)
+      test.todo(`then it immediately calls updateStoredConfiguration`);
+
+      test(`then it immediately look for the coverage containers`, async () => {
         // Arrange
-        const { cleanup } = createPageEnvironment();
+        const { cleanup: cleanupEnvironment } = createPageEnvironment();
+        const { cleanup: cleanupHtml } = createPage({
+          id: 'root1',
+          html: `
+          <div ${coverageContainerDomAttribute}='Foo'> <!-- Coverage container -->
+          </div>
+          `,
+        });
+
+        const configuration: Configuration = {
+          referencesToGlobals: getDefaultReferencesToGlobals(),
+        };
         const { dsCoverageDevtool } = createDevtool();
-        const { getState, start } = dsCoverageDevtool;
+        const { getState, start, setInitialConfiguration } = dsCoverageDevtool;
 
         // Act
         start();
+        setInitialConfiguration(configuration);
         await waitUntilReferencesToGlobalsArSet(getState);
 
         // Assert
-        const expectedState: ReturnType<typeof getState>['value'] = 'configured';
-        expect(getState().value).toEqual(expectedState);
+        const expectedResult = [
+          document.querySelectorAll(`[${coverageContainerDomAttribute}]`)[0],
+          document.body,
+        ];
+        expect(getState().context.coverageContainers).toEqual(expectedResult);
 
-        cleanup();
+        cleanupEnvironment();
+        cleanupHtml();
       });
-
-      test.todo(`then it immediately calls getCoverageContainers`);
 
       test.todo(`then it sends the current list of coverage containers`);
 

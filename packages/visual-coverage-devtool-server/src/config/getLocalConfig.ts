@@ -16,12 +16,15 @@ function isReferencesToGlobals(value: unknown): value is ReferencesToGlobals {
 
   // eslint-disable-next-line no-prototype-builtins
   if (!value.hasOwnProperty('createCalculateDsVisualCoverages')) return false;
+  // eslint-disable-next-line no-prototype-builtins
+  if (!value.hasOwnProperty('coverageContainerDomAttribute')) return false;
 
-  const { createCalculateDsVisualCoverages } = value;
+  const { createCalculateDsVisualCoverages, coverageContainerDomAttribute } = value;
 
   if (typeof createCalculateDsVisualCoverages !== 'string') return false;
+  if (typeof coverageContainerDomAttribute !== 'string') return false;
 
-  const obj = { createCalculateDsVisualCoverages };
+  const obj = { createCalculateDsVisualCoverages, coverageContainerDomAttribute };
   const isValid: ReferencesToGlobals = obj;
   const noNewOptionalProps: Omit<Required<ReferencesToGlobals>, keyof typeof obj> = {};
 

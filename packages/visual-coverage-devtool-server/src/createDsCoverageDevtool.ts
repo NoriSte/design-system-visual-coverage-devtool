@@ -6,9 +6,12 @@ import { getDefaultReferencesToGlobals } from './config/getDefaultReferencesToGl
 import { produce } from 'immer';
 
 type Events = { type: 'start' } | { type: 'configure'; configuration: Configuration };
-type Context = { configuration: Configuration };
+type Context = { configuration: Configuration; coverageContainers: Array<Element> };
 
-export const initialContext: Context = { configuration: { ...defaultConfiguration } };
+export const initialContext: Context = {
+  configuration: { ...defaultConfiguration },
+  coverageContainers: [],
+};
 
 export function createDsCoverageDevtool(options: {
   // The function is left unsigned until XState typegen supports V5 https://stately.ai/docs/typegen
@@ -36,6 +39,33 @@ export function createDsCoverageDevtool(options: {
             draft.referencesToGlobals = getDefaultReferencesToGlobals();
           }),
       }),
+      queryTheCoverageContainers: assign({
+        coverageContainers: ({ context }) => {
+          const { coverageContainerDomAttribute: coverageContainerDomAttributeReference } =
+            context.configuration.referencesToGlobals;
+
+          const coverageContainerDomAttribute = eval(coverageContainerDomAttributeReference);
+
+          const coverageContainers: Array<Element> = [];
+          if (coverageContainerDomAttribute) {
+            const domElements = globalThis.document.body.querySelectorAll(
+              `[${coverageContainerDomAttribute}]`,
+            );
+
+            for (let i = 0, n = domElements.length; i < n; i++) {
+              const domElement = domElements[i];
+              if (!domElement)
+                throw new Error(`No element at ${i} (this should be a TS-only protection)`);
+
+              coverageContainers.push(domElement);
+            }
+          }
+
+          coverageContainers.push(document.body);
+
+          return coverageContainers;
+        },
+      }),
     },
   }).createMachine({
     id: 'dsCoverageDevtool',
@@ -61,7 +91,9 @@ export function createDsCoverageDevtool(options: {
         ],
       },
 
-      configured: {},
+      configured: {
+        entry: [{ type: 'queryTheCoverageContainers' }],
+      },
     },
   });
 
