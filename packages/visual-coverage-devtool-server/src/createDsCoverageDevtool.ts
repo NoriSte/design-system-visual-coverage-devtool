@@ -1,11 +1,13 @@
-import { createActor, setup } from 'xstate';
+import { assign, createActor, setup } from 'xstate';
 import type { Configuration } from './types';
-import { defaultConfig } from './config/constants';
+import { defaultConfiguration } from './config/constants';
+import { areDefaultReferencesToGlobalsAvailable } from './config/areDefaultReferencesToGlobalsAvailable';
+import { getDefaultReferencesToGlobals } from './config/getDefaultReferencesToGlobals';
 
-type Events = { type: 'start' };
-type Context = Configuration & {};
+type Events = { type: 'start' } | { type: 'configure'; configuration: Configuration };
+type Context = { configuration: Configuration };
 
-export const initialContext: Context = { ...defaultConfig };
+export const initialContext: Context = { configuration: { ...defaultConfiguration } };
 
 export function createDsCoverageDevtool(options: {
   // The function is left unsigned until XState typegen supports V5 https://stately.ai/docs/typegen
@@ -20,19 +22,44 @@ export function createDsCoverageDevtool(options: {
       context: {} as Context,
       events: {} as Events,
     },
+    actions: {
+      setConfiguration: assign({
+        configuration: ({ event }) => {
+          if (event.type !== 'configure') throw new Error(`Wrong event type -${event.type}-`);
+          return event.configuration;
+        },
+      }),
+      setDefaultReferencesToGlobals: assign({
+        configuration: ({ context }) => ({
+          ...context.configuration,
+          referencesToGlobals: getDefaultReferencesToGlobals(),
+        }),
+      }),
+    },
   }).createMachine({
     id: 'dsCoverageDevtool',
-    context: initialContext,
     initial: 'idle',
+    context: initialContext,
+
     states: {
-      idle: {
+      idle: { on: { start: { target: 'unconfigured' } } },
+
+      unconfigured: {
         on: {
-          start: {
-            target: 'start',
+          configure: {
+            actions: 'setConfiguration',
           },
         },
+        always: [
+          {
+            guard: areDefaultReferencesToGlobalsAvailable,
+            actions: 'setDefaultReferencesToGlobals',
+            target: 'configured',
+          },
+        ],
       },
-      start: {},
+
+      configured: {},
     },
   });
 

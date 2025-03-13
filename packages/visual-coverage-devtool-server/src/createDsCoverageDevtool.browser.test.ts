@@ -1,5 +1,8 @@
 import { describe, test } from 'vitest';
 import { createDsCoverageDevtool, initialContext } from './createDsCoverageDevtool';
+import { defaultConfiguration, exposedReferencesToGlobalsContainer } from './config/constants';
+import type { ReferencesToGlobals } from './types';
+import { createCalculateDsVisualCoverages } from '@preply/ds-visual-coverage-preply-web';
 
 // TODO: check all the extension-side features
 // TODO: check all the UI features
@@ -58,20 +61,22 @@ describe('createDsCoverageDevtool', () => {
       // Arrange
       const onUpdateMock = vi.fn();
       const dsCoverageDevtool = createDsCoverageDevtool({ onUpdate: onUpdateMock });
-      const { start } = dsCoverageDevtool;
+      const { start, getState } = dsCoverageDevtool;
 
       // Act
       start();
 
       // Assert
-      // const expectedResult: ReturnType<typeof getState> = {
-      //   context: initialContext,
-      //   value: 'start',
-      // };
+      const expectedResult: ReturnType<typeof getState> = {
+        context: initialContext,
+        value: 'unconfigured',
+      };
 
       expect(onUpdateMock).toHaveBeenCalledOnce();
-      // TODO: once onUpdate will be called with the updated state...
+
+      // TODO: once onUpdate will be called with the updated state, swap the next two lines
       // expect(onUpdateMock).toHaveBeenCalledExactlyOnceWith(expectedResult);
+      expect(getState()).toEqual(expectedResult);
     });
 
     test(`then its configuration is empty`, () => {
@@ -85,7 +90,7 @@ describe('createDsCoverageDevtool', () => {
 
       // Assert
       const expectedResult = initialContext;
-
+      // TODO: once onUpdate will be called with the updated state, assert about it
       expect(getState().context).toEqual(expectedResult);
     });
 
@@ -112,7 +117,7 @@ describe('createDsCoverageDevtool', () => {
     //   test.todo(`then it sends an event with the current state`)
     // })
 
-    describe.todo(`and the global DS coverage functions are not stored locally`, () => {
+    describe(`and the global DS coverage functions are not stored locally`, () => {
       describe.todo(`and the domain is one of the Preply ones`, () => {
         test.todo(`then it sets the global Preply DS coverage functions`);
 
@@ -129,10 +134,56 @@ describe('createDsCoverageDevtool', () => {
 
         test.todo(`then it's ready to start debugging`);
       });
-      describe.todo(`and the domain is not part of the pre-configured ones`, () => {
-        test.todo(`then it waits for the global DS coverage functions`);
+      describe(`and the domain is not part of the pre-configured ones`, () => {
+        describe(`and the functions are exposed with the default devtool object`, () => {
+          test(`then it sets the global DS coverage functions`, async () => {
+            // Arrange
+            // --------------------------------------------------
 
-        test.todo(`then it sends an event with the current state`);
+            // Create the fake page environment
+            const referencesToGlobals: Record<keyof ReferencesToGlobals, unknown> = {
+              createCalculateDsVisualCoverages,
+            };
+            globalThis[exposedReferencesToGlobalsContainer] = referencesToGlobals;
+
+            const onUpdateMock = vi.fn();
+            const dsCoverageDevtool = createDsCoverageDevtool({ onUpdate: onUpdateMock });
+            const { getState, start } = dsCoverageDevtool;
+
+            // Act
+            // --------------------------------------------------
+            start();
+
+            // Assert
+            // --------------------------------------------------
+            const expectedResult: ReferencesToGlobals = {
+              createCalculateDsVisualCoverages:
+                'globalThis.__DS_VISUAL_COVERAGE_DEVTOOLS__.createCalculateDsVisualCoverages',
+            };
+
+            await expect
+              .poll(
+                () =>
+                  getState().context.configuration.referencesToGlobals
+                    .createCalculateDsVisualCoverages,
+                { message: 'The configuration never changed from the default value' },
+              )
+              .not.toBe(defaultConfiguration.referencesToGlobals.createCalculateDsVisualCoverages);
+
+            const expectedState: ReturnType<typeof getState>['value'] = 'configured';
+            expect(getState().value).toEqual(expectedState);
+            expect(getState().context.configuration.referencesToGlobals).toEqual(expectedResult);
+          });
+
+          test.todo(`then it sends an event containing the global DS coverage functions`);
+
+          test.todo(`then it's ready to start debugging`);
+        });
+        describe.todo(`and the functions are not exposed on the generic object`, () => {
+          test.todo(`then it waits for the global DS coverage functions`);
+
+          test.todo(`then it sends an event with the current state`);
+        });
       });
     });
 
