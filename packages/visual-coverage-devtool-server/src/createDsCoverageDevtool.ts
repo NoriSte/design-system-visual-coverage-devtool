@@ -1,12 +1,19 @@
 import { assign, createActor, setup } from 'xstate';
-import type { Configuration } from './types';
+import type { Configuration, CoverageContainersReference } from './types';
 import { defaultConfiguration } from './config/constants';
 import { areDefaultReferencesToGlobalsAvailable } from './config/areDefaultReferencesToGlobalsAvailable';
 import { getDefaultReferencesToGlobals } from './config/getDefaultReferencesToGlobals';
 import { produce } from 'immer';
+import { getCoverageContainers } from './core/getCoverageContainers';
 
-type Events = { type: 'start' } | { type: 'configure'; configuration: Configuration };
-type Context = { configuration: Configuration; coverageContainers: Array<Element> };
+type Events =
+  | { type: 'start' }
+  | { type: 'queryTheCoverageContainers' }
+  | { type: 'configure'; configuration: Configuration };
+type Context = {
+  configuration: Configuration;
+  coverageContainers: Array<CoverageContainersReference>;
+};
 
 export const initialContext: Context = {
   configuration: { ...defaultConfiguration },
@@ -46,24 +53,10 @@ export function createDsCoverageDevtool(options: {
 
           const coverageContainerDomAttribute = eval(coverageContainerDomAttributeReference);
 
-          const coverageContainers: Array<Element> = [];
-          if (coverageContainerDomAttribute) {
-            const domElements = globalThis.document.body.querySelectorAll(
-              `[${coverageContainerDomAttribute}]`,
-            );
-
-            for (let i = 0, n = domElements.length; i < n; i++) {
-              const domElement = domElements[i];
-              if (!domElement)
-                throw new Error(`No element at ${i} (this should be a TS-only protection)`);
-
-              coverageContainers.push(domElement);
-            }
-          }
-
-          coverageContainers.push(document.body);
-
-          return coverageContainers;
+          return getCoverageContainers({
+            coverageContainerDomAttribute,
+            rootElement: globalThis.document.body,
+          });
         },
       }),
     },
@@ -71,6 +64,12 @@ export function createDsCoverageDevtool(options: {
     id: 'dsCoverageDevtool',
     initial: 'idle',
     context: initialContext,
+
+    on: {
+      queryTheCoverageContainers: {
+        actions: 'queryTheCoverageContainers',
+      },
+    },
 
     states: {
       idle: { on: { start: { target: 'unconfigured' } } },
@@ -123,5 +122,9 @@ export function createDsCoverageDevtool(options: {
     actor.send({ type: 'configure', configuration });
   }
 
-  return { getState, start, setInitialConfiguration };
+  function queryTheCoverageContainers() {
+    actor.send({ type: 'queryTheCoverageContainers' });
+  }
+
+  return { getState, start, setInitialConfiguration, queryTheCoverageContainers };
 }

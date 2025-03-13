@@ -11,3 +11,7 @@ export interface Configuration {
    */
   referencesToGlobals: ReferencesToGlobals;
 }
+
+export interface CoverageContainersReference {
+  element: Element;
+}
