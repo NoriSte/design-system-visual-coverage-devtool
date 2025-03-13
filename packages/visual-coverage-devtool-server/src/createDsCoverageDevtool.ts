@@ -3,6 +3,7 @@ import type { Configuration } from './types';
 import { defaultConfiguration } from './config/constants';
 import { areDefaultReferencesToGlobalsAvailable } from './config/areDefaultReferencesToGlobalsAvailable';
 import { getDefaultReferencesToGlobals } from './config/getDefaultReferencesToGlobals';
+import { produce } from 'immer';
 
 type Events = { type: 'start' } | { type: 'configure'; configuration: Configuration };
 type Context = { configuration: Configuration };
@@ -30,10 +31,10 @@ export function createDsCoverageDevtool(options: {
         },
       }),
       setDefaultReferencesToGlobals: assign({
-        configuration: ({ context }) => ({
-          ...context.configuration,
-          referencesToGlobals: getDefaultReferencesToGlobals(),
-        }),
+        configuration: ({ context }) =>
+          produce(context.configuration, draft => {
+            draft.referencesToGlobals = getDefaultReferencesToGlobals();
+          }),
       }),
     },
   }).createMachine({
@@ -48,6 +49,7 @@ export function createDsCoverageDevtool(options: {
         on: {
           configure: {
             actions: 'setConfiguration',
+            target: 'configured',
           },
         },
         always: [
@@ -85,5 +87,9 @@ export function createDsCoverageDevtool(options: {
     actor.send({ type: 'start' });
   }
 
-  return { getState, start };
+  function setInitialConfiguration(configuration: Configuration) {
+    actor.send({ type: 'configure', configuration });
+  }
+
+  return { getState, start, setInitialConfiguration };
 }

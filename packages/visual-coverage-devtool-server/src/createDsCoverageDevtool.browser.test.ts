@@ -1,7 +1,7 @@
 import { describe, test } from 'vitest';
 import { createDsCoverageDevtool, initialContext } from './createDsCoverageDevtool';
 import { defaultConfiguration, exposedReferencesToGlobalsContainer } from './config/constants';
-import type { ReferencesToGlobals } from './types';
+import type { Configuration, ReferencesToGlobals } from './types';
 import { createCalculateDsVisualCoverages } from '@preply/ds-visual-coverage-preply-web';
 
 // TODO: check all the extension-side features
@@ -217,11 +217,31 @@ describe('createDsCoverageDevtool', () => {
             const expectedState: ReturnType<typeof getState>['value'] = 'unconfigured';
             expect(getState().value).toEqual(expectedState);
           });
+
+          test(`then it accept an external configuration for the global DS coverage functions`, async () => {
+            // Arrange
+            const configuration: Configuration = {
+              referencesToGlobals: {
+                createCalculateDsVisualCoverages: 'fakeReference',
+              },
+            };
+            const { dsCoverageDevtool } = createDevtool();
+            const { getState, start, setInitialConfiguration } = dsCoverageDevtool;
+
+            // Act
+            start();
+            setInitialConfiguration(configuration);
+            await waitUntilReferencesToGlobalsArSet(getState);
+
+            // Assert
+            const expectedState: ReturnType<typeof getState>['value'] = 'configured';
+            expect(getState().value).toEqual(expectedState);
+          });
         });
       });
     });
 
-    // useful when the user opens the settings to check the current configuration, maybe after tey get an error after running the coverage
+    // useful when the user opens the settings to check the current configuration, maybe after they get an error after running the coverage
     describe.todo(`and asked to check the global DS coverage functions`, () => {
       describe.todo(`and the passed getComponentInfo doesn't work as expected`, () => {
         test.todo(`then it gets a full list of the errors`);
@@ -242,8 +262,23 @@ describe('createDsCoverageDevtool', () => {
       // Isn't a result -> company-specific result converter missing?
     });
 
-    describe.todo(`and configured`, () => {
-      test.todo(`then it immediately calls updateStoredConfiguration`);
+    describe(`and configured`, () => {
+      test(`then it immediately calls updateStoredConfiguration`, async () => {
+        // Arrange
+        const { cleanup } = createPageEnvironment();
+        const { dsCoverageDevtool } = createDevtool();
+        const { getState, start } = dsCoverageDevtool;
+
+        // Act
+        start();
+        await waitUntilReferencesToGlobalsArSet(getState);
+
+        // Assert
+        const expectedState: ReturnType<typeof getState>['value'] = 'configured';
+        expect(getState().value).toEqual(expectedState);
+
+        cleanup();
+      });
 
       test.todo(`then it immediately calls getCoverageContainers`);
 

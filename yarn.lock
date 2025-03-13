@@ -2553,6 +2553,7 @@ __metadata:
     "@testing-library/dom": ^10.4.0
     "@vitest/coverage-istanbul": ^3.0.4
     "@xstate/cli": ^0.5.17
+    immer: ^10.1.1
     react: ^18.2.0
     typescript: latest
     xstate: ^5.19.2
@@ -8724,6 +8725,13 @@ __metadata:
   version: 7.0.3
   resolution: "ignore@npm:7.0.3"
   checksum: a0826b70b217d560e3703e3d64483283dc85f4c4ebca1f5bffeeecec9a7453dd542f33a02daeefa8d6f3c5f7ef387ec014ce2733014333357dd620002fa1fd4a
+  languageName: node
+  linkType: hard
+
+"immer@npm:^10.1.1":
+  version: 10.1.1
+  resolution: "immer@npm:10.1.1"
+  checksum: 07c67970b7d22aded73607193d84861bf786f07d47f7d7c98bb10016c7a88f6654ad78ae1e220b3c623695b133aabbf24f5eb8d9e8060cff11e89ccd81c9c10b
   languageName: node
   linkType: hard
 
