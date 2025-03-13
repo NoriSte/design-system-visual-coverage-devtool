@@ -91,6 +91,22 @@ async function waitUntilReferencesToGlobalsArSet(
     )
     .not.toBe(defaultConfiguration.referencesToGlobals.createCalculateDsVisualCoverages);
 }
+async function waitUntilThereAreNoUpdates(onUpdateMock: ReturnType<typeof vi.fn>) {
+  let lastCallAmount = onUpdateMock.mock.calls.length;
+  await expect
+    .poll(
+      () => {
+        const actualCallAmount = onUpdateMock.mock.calls.length;
+        if (lastCallAmount !== actualCallAmount) {
+          lastCallAmount = actualCallAmount;
+          return false;
+        }
+        return true;
+      },
+      { interval: 50 },
+    )
+    .toBeTruthy();
+}
 function delay(ms: number) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
@@ -186,7 +202,7 @@ describe('createDsCoverageDevtool', () => {
       });
       describe(`and the domain is not part of the pre-configured ones`, () => {
         describe(`and the functions are exposed with the default devtool object`, () => {
-          test(`then it sets the global DS coverage functions`, async () => {
+          test(`then it sets the global DS coverage functions`, () => {
             // Arrange
             const { cleanup } = createPageEnvironment();
             const { dsCoverageDevtool } = createDevtool();
@@ -194,7 +210,6 @@ describe('createDsCoverageDevtool', () => {
 
             // Act
             start();
-            await waitUntilReferencesToGlobalsArSet(getState);
 
             // Assert
             const expectedResult: ReferencesToGlobals = {
@@ -209,7 +224,7 @@ describe('createDsCoverageDevtool', () => {
             cleanup();
           });
 
-          test(`then it's ready to start debugging`, async () => {
+          test(`then it's ready to start debugging`, () => {
             // Arrange
             const { cleanup } = createPageEnvironment();
             const { dsCoverageDevtool } = createDevtool();
@@ -217,7 +232,6 @@ describe('createDsCoverageDevtool', () => {
 
             // Act
             start();
-            await waitUntilReferencesToGlobalsArSet(getState);
 
             // Assert
             const expectedState: ReturnType<typeof getState>['value'] = 'configured';
@@ -241,7 +255,7 @@ describe('createDsCoverageDevtool', () => {
             expect(getState().value).toEqual(expectedState);
           });
 
-          test(`then it accept an external configuration for the global DS coverage functions`, async () => {
+          test(`then it accept an external configuration for the global DS coverage functions`, () => {
             // Arrange
             const { cleanup } = createPageEnvironment();
 
@@ -254,7 +268,6 @@ describe('createDsCoverageDevtool', () => {
             // Act
             start();
             setInitialConfiguration(configuration);
-            await waitUntilReferencesToGlobalsArSet(getState);
 
             // Assert
             const expectedState: ReturnType<typeof getState>['value'] = 'configured';
@@ -291,7 +304,7 @@ describe('createDsCoverageDevtool', () => {
       // TODO: this is more a test for the between the devtool server and the devtool middleware (part of the browser extension)
       test.todo(`then it immediately calls updateStoredConfiguration`);
 
-      test(`then it immediately look for the coverage containers`, async () => {
+      test(`then it immediately look for the coverage containers`, () => {
         // Arrange
         const { cleanup: cleanupEnvironment } = createPageEnvironment();
         const { cleanup: cleanupHtml } = createPage({
@@ -311,7 +324,6 @@ describe('createDsCoverageDevtool', () => {
         // Act
         start();
         setInitialConfiguration(configuration);
-        await waitUntilReferencesToGlobalsArSet(getState);
 
         // Assert
         const expectedResult = [
