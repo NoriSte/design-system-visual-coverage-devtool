@@ -42,12 +42,43 @@ function createDsCoverageDebugger(options: CreateDsCoverageDebuggerOptions) {
 }
 // ----------
 
+function createPageEnvironment() {
+  // Create the fake page environment
+  const referencesToGlobals: Record<keyof ReferencesToGlobals, unknown> = {
+    createCalculateDsVisualCoverages,
+  };
+  globalThis[exposedReferencesToGlobalsContainer] = referencesToGlobals;
+
+  return {
+    cleanup: () => {
+      delete globalThis[exposedReferencesToGlobalsContainer];
+    },
+  };
+}
+function createDevtool() {
+  const onUpdateMock = vi.fn();
+  const dsCoverageDevtool = createDsCoverageDevtool({ onUpdate: onUpdateMock });
+  return { dsCoverageDevtool, onUpdateMock };
+}
+async function waitUntilReferencesToGlobalsArSet(
+  getState: ReturnType<typeof createDsCoverageDevtool>['getState'],
+) {
+  await expect
+    .poll(
+      () => getState().context.configuration.referencesToGlobals.createCalculateDsVisualCoverages,
+      { message: 'The configuration never changed from the default value' },
+    )
+    .not.toBe(defaultConfiguration.referencesToGlobals.createCalculateDsVisualCoverages);
+}
+function delay(ms: number) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 describe('createDsCoverageDevtool', () => {
   describe(`When created`, () => {
     test(`it's in idle state`, () => {
       // Arrange
-      const onUpdateMock = vi.fn();
-      const dsCoverageDevtool = createDsCoverageDevtool({ onUpdate: onUpdateMock });
+      const { dsCoverageDevtool, onUpdateMock } = createDevtool();
       const { getState } = dsCoverageDevtool;
 
       // Assert
@@ -59,8 +90,7 @@ describe('createDsCoverageDevtool', () => {
 
     test(`then it sends an event with the current state`, () => {
       // Arrange
-      const onUpdateMock = vi.fn();
-      const dsCoverageDevtool = createDsCoverageDevtool({ onUpdate: onUpdateMock });
+      const { dsCoverageDevtool, onUpdateMock } = createDevtool();
       const { start, getState } = dsCoverageDevtool;
 
       // Act
@@ -81,8 +111,7 @@ describe('createDsCoverageDevtool', () => {
 
     test(`then its configuration is empty`, () => {
       // Arrange
-      const onUpdateMock = vi.fn();
-      const dsCoverageDevtool = createDsCoverageDevtool({ onUpdate: onUpdateMock });
+      const { dsCoverageDevtool } = createDevtool();
       const { getState, start } = dsCoverageDevtool;
 
       // Act
@@ -138,51 +167,56 @@ describe('createDsCoverageDevtool', () => {
         describe(`and the functions are exposed with the default devtool object`, () => {
           test(`then it sets the global DS coverage functions`, async () => {
             // Arrange
-            // --------------------------------------------------
-
-            // Create the fake page environment
-            const referencesToGlobals: Record<keyof ReferencesToGlobals, unknown> = {
-              createCalculateDsVisualCoverages,
-            };
-            globalThis[exposedReferencesToGlobalsContainer] = referencesToGlobals;
-
-            const onUpdateMock = vi.fn();
-            const dsCoverageDevtool = createDsCoverageDevtool({ onUpdate: onUpdateMock });
+            const { cleanup } = createPageEnvironment();
+            const { dsCoverageDevtool } = createDevtool();
             const { getState, start } = dsCoverageDevtool;
 
             // Act
-            // --------------------------------------------------
             start();
+            await waitUntilReferencesToGlobalsArSet(getState);
 
             // Assert
-            // --------------------------------------------------
             const expectedResult: ReferencesToGlobals = {
               createCalculateDsVisualCoverages:
                 'globalThis.__DS_VISUAL_COVERAGE_DEVTOOLS__.createCalculateDsVisualCoverages',
             };
 
-            await expect
-              .poll(
-                () =>
-                  getState().context.configuration.referencesToGlobals
-                    .createCalculateDsVisualCoverages,
-                { message: 'The configuration never changed from the default value' },
-              )
-              .not.toBe(defaultConfiguration.referencesToGlobals.createCalculateDsVisualCoverages);
-
-            const expectedState: ReturnType<typeof getState>['value'] = 'configured';
-            expect(getState().value).toEqual(expectedState);
             expect(getState().context.configuration.referencesToGlobals).toEqual(expectedResult);
+
+            cleanup();
           });
 
-          test.todo(`then it sends an event containing the global DS coverage functions`);
+          test(`then it's ready to start debugging`, async () => {
+            // Arrange
+            const { cleanup } = createPageEnvironment();
+            const { dsCoverageDevtool } = createDevtool();
+            const { getState, start } = dsCoverageDevtool;
 
-          test.todo(`then it's ready to start debugging`);
+            // Act
+            start();
+            await waitUntilReferencesToGlobalsArSet(getState);
+
+            // Assert
+            const expectedState: ReturnType<typeof getState>['value'] = 'configured';
+            expect(getState().value).toEqual(expectedState);
+
+            cleanup();
+          });
         });
-        describe.todo(`and the functions are not exposed on the generic object`, () => {
-          test.todo(`then it waits for the global DS coverage functions`);
+        describe(`and the functions are not exposed on the generic object`, () => {
+          test(`then it waits for the global DS coverage functions`, async () => {
+            // Arrange
+            const { dsCoverageDevtool } = createDevtool();
+            const { getState, start } = dsCoverageDevtool;
 
-          test.todo(`then it sends an event with the current state`);
+            // Act
+            start();
+            await delay(10); // it's enough for the machine to internally set the references if any
+
+            // Assert
+            const expectedState: ReturnType<typeof getState>['value'] = 'unconfigured';
+            expect(getState().value).toEqual(expectedState);
+          });
         });
       });
     });
