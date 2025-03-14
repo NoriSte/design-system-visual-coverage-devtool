@@ -14,5 +14,4 @@ export interface Configuration {
 
 export interface CoverageContainersReference {
   element: Element;
-  available: boolean;
 }

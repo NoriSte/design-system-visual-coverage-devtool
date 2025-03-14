@@ -53,17 +53,10 @@ export function createDsCoverageDevtool(options: {
 
           const coverageContainerDomAttribute = eval(coverageContainerDomAttributeReference);
 
-          const previousContainers = context.coverageContainers;
-          previousContainers.pop(); // remove the globalThis.document.body which, technically speaking, it's not a coverage container, but it's there to help working with the  DS visual coverage library
-          const coverageContainers = getCoverageContainers({
+          return getCoverageContainers({
             coverageContainerDomAttribute,
             rootElement: globalThis.document.body,
-            previousContainers: context.coverageContainers,
           });
-
-          coverageContainers.push({ element: globalThis.document.body, available: true });
-
-          return coverageContainers;
         },
       }),
     },
