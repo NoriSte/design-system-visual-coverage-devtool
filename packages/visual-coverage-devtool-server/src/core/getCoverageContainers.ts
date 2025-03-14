@@ -19,6 +19,6 @@ export function getCoverageContainers(params: {
     }
   }
 
-  coverageContainers.push({ element: document.body });
+  coverageContainers.push({ element: rootElement });
   return coverageContainers;
 }

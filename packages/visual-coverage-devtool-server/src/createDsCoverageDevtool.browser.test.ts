@@ -402,27 +402,28 @@ describe('createDsCoverageDevtool', () => {
         });
       });
 
-      describe.todo(`and it's asked to refresh the coverage containers list`, () => {
-        describe.todo(`and some coverage containers are missing`, () => {
-          test.todo(`then it immediately calls getCoverageContainers`);
+      // TODO: this is a UI behavior, not a server one!
+      // describe.todo(`and it's asked to refresh the coverage containers list`, () => {
+      //   describe.todo(`and some coverage containers are missing`, () => {
+      //     test.todo(`then it immediately calls getCoverageContainers`);
 
-          test.todo(`then it gets all the current and previous containers`);
+      //     test.todo(`then it gets all the current and previous containers`);
 
-          test.todo(`then the missing containers are marked as not available`);
+      //     test.todo(`then the missing containers are marked as not available`);
 
-          test.todo(`then it sends an event with the current state`);
-        });
+      //     test.todo(`then it sends an event with the current state`);
+      //   });
 
-        describe.todo(`and some new coverage containers are available`, () => {
-          test.todo(`then it immediately calls getCoverageContainers`);
+      //   describe.todo(`and some new coverage containers are available`, () => {
+      //     test.todo(`then it immediately calls getCoverageContainers`);
 
-          test.todo(`then it gets all the current and previous containers`);
+      //     test.todo(`then it gets all the current and previous containers`);
 
-          test.todo(`then the new containers are marked as new`);
+      //     test.todo(`then the new containers are marked as new`);
 
-          test.todo(`then it sends an event with the current state`);
-        });
-      });
+      //     test.todo(`then it sends an event with the current state`);
+      //   });
+      // });
     });
 
     describe.todo(`and a full debugger configuration is available`, () => {
