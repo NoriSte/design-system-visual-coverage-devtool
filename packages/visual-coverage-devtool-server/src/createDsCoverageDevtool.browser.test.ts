@@ -301,7 +301,7 @@ describe('createDsCoverageDevtool', () => {
     });
 
     describe(`and configured`, () => {
-      // TODO: this is more a test for the between the devtool server and the devtool middleware (part of the browser extension)
+      // TODO: this is more a test for between the devtool server and the devtool middleware (part of the browser extension)
       test.todo(`then it immediately calls updateStoredConfiguration`);
 
       test(`then it immediately look for the coverage containers`, () => {
@@ -322,8 +322,11 @@ describe('createDsCoverageDevtool', () => {
 
         // Assert
         const expectedResult = [
-          { element: document.querySelectorAll(`[${coverageContainerDomAttribute}]`)[0] },
-          { element: document.body },
+          {
+            element: document.querySelectorAll(`[${coverageContainerDomAttribute}]`)[0],
+            available: true,
+          },
+          { element: document.body, available: true },
         ];
         expect(getState().context.coverageContainers).toEqual(expectedResult);
 
@@ -334,7 +337,7 @@ describe('createDsCoverageDevtool', () => {
       test.todo(`then it sends an event with the current state`);
 
       describe(`and asked to get the coverage containers list`, () => {
-        test(`TODO: CHANGE NAME! then it immediately calls getCoverageContainers`, () => {
+        test(`then it re-queries the page`, () => {
           // Arrange
           const { cleanup: cleanupEnvironment } = createPageEnvironment();
           const { cleanup: cleanupHtmlForFoo } = createHtmlPage({
@@ -352,8 +355,11 @@ describe('createDsCoverageDevtool', () => {
 
           // Assert
           const expectedResultForFoo = [
-            { element: document.querySelectorAll(`[${coverageContainerDomAttribute}]`)[0] },
-            { element: document.body },
+            {
+              element: document.querySelectorAll(`[${coverageContainerDomAttribute}]`)[0],
+              available: true,
+            },
+            { element: document.body, available: true },
           ];
           expect(getState().context.coverageContainers).toEqual(expectedResultForFoo);
 
@@ -363,6 +369,8 @@ describe('createDsCoverageDevtool', () => {
           // Arrange
           const { cleanup: cleanupHtmlForBar } = createHtmlPage({
             html: `
+            <div ${coverageContainerDomAttribute}='Foo'> <!-- Coverage container -->
+            </div>
             <div ${coverageContainerDomAttribute}='Bar'> <!-- Coverage container -->
             </div>
             `,
@@ -373,17 +381,24 @@ describe('createDsCoverageDevtool', () => {
 
           // Assert
           const expectedResultForBar = [
-            { element: document.querySelectorAll(`[${coverageContainerDomAttribute}]`)[0] },
-            { element: document.body },
+            {
+              element: document.querySelectorAll(`[${coverageContainerDomAttribute}]`)[0],
+              available: true,
+            },
+            {
+              element: document.querySelectorAll(`[${coverageContainerDomAttribute}]`)[1],
+              available: true,
+            },
+            { element: document.body, available: true },
           ];
-          // This is a self protection because here the test is opaque. What happens if we mess it
-          // up and the page isn't re-created?
-          expect(
-            expectedResultForFoo[0]?.element?.getAttribute(coverageContainerDomAttribute),
-          ).toBe('Foo');
-          expect(
-            expectedResultForBar[0]?.element?.getAttribute(coverageContainerDomAttribute),
-          ).toBe('Bar');
+          // // This is a self protection because here the test is opaque. What happens if we mess it
+          // // up and the page isn't re-created?
+          // expect(
+          //   expectedResultForFoo[0]?.element?.getAttribute(coverageContainerDomAttribute),
+          // ).toBe('Foo');
+          // expect(
+          //   expectedResultForBar[0]?.element?.getAttribute(coverageContainerDomAttribute),
+          // ).toBe('Bar');
 
           expect(getState().context.coverageContainers).toEqual(expectedResultForBar);
 

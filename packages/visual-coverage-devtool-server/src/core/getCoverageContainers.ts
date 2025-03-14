@@ -1,12 +1,16 @@
 import type { CoverageContainersReference } from '../types';
 
 export function getCoverageContainers(params: {
-  coverageContainerDomAttribute?: string;
   rootElement: HTMLElement;
+  coverageContainerDomAttribute?: string;
+  previousContainers: Array<CoverageContainersReference>;
 }) {
-  const { coverageContainerDomAttribute, rootElement } = params;
+  const { coverageContainerDomAttribute, rootElement, previousContainers } = params;
 
-  const coverageContainers: Array<CoverageContainersReference> = [];
+  const coverageContainers: Array<CoverageContainersReference> = previousContainers.map(item => ({
+    ...item,
+    available: false,
+  }));
 
   if (coverageContainerDomAttribute) {
     const domElements = rootElement.querySelectorAll(`[${coverageContainerDomAttribute}]`);
@@ -15,10 +19,28 @@ export function getCoverageContainers(params: {
       const domElement = domElements[i];
       if (!domElement) throw new Error(`No element at ${i} (this should be a TS-only protection)`);
 
-      coverageContainers.push({ element: domElement });
+      const coverageContainerDomAttributeValue = domElement.getAttribute(
+        coverageContainerDomAttribute,
+      );
+
+      if (!coverageContainerDomAttributeValue)
+        throw new Error(
+          `The element doesn't have the coverage attribute (this should be a TS-only protection)`,
+        );
+
+      const existingContainer = coverageContainers.find(
+        item =>
+          item.element.getAttribute(coverageContainerDomAttribute) ===
+          coverageContainerDomAttributeValue,
+      );
+      if (existingContainer) {
+        existingContainer.available = true;
+        existingContainer.element = domElement;
+      } else {
+        coverageContainers.push({ element: domElement, available: true });
+      }
     }
   }
 
-  coverageContainers.push({ element: document.body });
   return coverageContainers;
 }
