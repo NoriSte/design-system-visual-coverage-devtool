@@ -1,1 +1,1 @@
-export const foo = 'bar';
+export { createDsCoverageDevtool } from './createDsCoverageDevtool';
