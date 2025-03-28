@@ -426,42 +426,64 @@ describe('createDsCoverageDevtool', () => {
       // });
     });
 
-    describe.todo(`and a full debugger configuration is available`, () => {
+    describe(`and a full debugger configuration is available`, () => {
       // Configuration includes the slowmo timeout, etc.
       // TODO:
 
-      describe.todo(
-        `and it's asked to launch the DS coverage on a specific coverage container`,
-        () => {
-          describe.todo(`and the DS coverage doesn't encounter errors`, () => {
-            test.todo(`then it launches the DS coverage on the coverage container`);
+      describe(`and it's asked to launch the DS coverage on a specific coverage container`, () => {
+        describe(`and the DS coverage doesn't encounter errors`, () => {
+          test(`then it launches the DS coverage on the coverage container`, async () => {
+            // Arrange
+            const { cleanup: cleanupEnvironment } = createPageEnvironment();
+            const { cleanup: cleanupHtml } = createHtmlPage({
+              html: `
+          <div ${coverageContainerDomAttribute}='Foo'> <!-- Coverage container -->
+          </div>
+          `,
+            });
+
+            const { dsCoverageDevtool } = createDevtool();
+            const { getState, start } = dsCoverageDevtool;
+
+            // Act
+            start();
+
+            // Assert
+            const expectedResult = [
+              { element: document.querySelectorAll(`[${coverageContainerDomAttribute}]`)[0] },
+              { element: document.body },
+            ];
+            expect(getState().context.coverageContainers).toEqual(expectedResult);
+
+            cleanupEnvironment();
+            cleanupHtml();
+          });
+
+          test.todo(`then it forwards all the events coming from the DS coverage`);
+
+          test.todo(`then it sends an event with the results`);
+        });
+
+        describe.todo(`and the DS coverage encounters errors`, () => {
+          test.todo(`then it sends an event with the errors`);
+        });
+
+        describe.todo(`and it's asked to stop the DS coverage`, () => {
+          test.todo(`then it launches the DS coverage on the coverage container`);
+
+          test.todo(`then it stops the DS coverage`);
+
+          describe.todo(`and it's asked to stop the DS coverage`, () => {
+            test.todo(`then it launches the DS coverage on the coverage container again`);
 
             test.todo(`then it forwards all the events coming from the DS coverage`);
 
             test.todo(`then it sends an event with the results`);
+
+            test.todo(`then it didn't send any extra event from the stopped DS coverage`);
           });
-
-          describe.todo(`and the DS coverage encounters errors`, () => {
-            test.todo(`then it sends an event with the errors`);
-          });
-
-          describe.todo(`and it's asked to stop the DS coverage`, () => {
-            test.todo(`then it launches the DS coverage on the coverage container`);
-
-            test.todo(`then it stops the DS coverage`);
-
-            describe.todo(`and it's asked to stop the DS coverage`, () => {
-              test.todo(`then it launches the DS coverage on the coverage container again`);
-
-              test.todo(`then it forwards all the events coming from the DS coverage`);
-
-              test.todo(`then it sends an event with the results`);
-
-              test.todo(`then it didn't send any extra event from the stopped DS coverage`);
-            });
-          });
-        },
-      );
+        });
+      });
 
       describe.todo(`and it's disposed`, () => {
         test.todo(`then it launches the DS coverage on the coverage container`);

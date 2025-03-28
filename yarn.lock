@@ -2578,6 +2578,7 @@ __metadata:
     "@eslint/js": ^9.20.0
     "@pixi/rollup-plugin-rename-node-modules": ^2.0.0
     "@preply/ds-visual-coverage-preply-web": "portal:../design-system/packages/visual-coverage-preply-web"
+    "@preply/ds-visual-coverage-web": "portal:../design-system/packages/visual-coverage-web"
     "@rollup/plugin-image": ^3.0.3
     "@rollup/plugin-node-resolve": ^16.0.0
     "@storybook/cli": 8.5.8
@@ -3163,6 +3164,14 @@ __metadata:
     "@preply/ds-visual-coverage-preply": 1.2.1
     "@preply/ds-visual-coverage-web": 1.2.1
     react: ^16 || ^18
+  languageName: node
+  linkType: soft
+
+"@preply/ds-visual-coverage-web@portal:../design-system/packages/visual-coverage-web::locator=%40noriste%2Fds-workspace%40workspace%3A.":
+  version: 0.0.0-use.local
+  resolution: "@preply/ds-visual-coverage-web@portal:../design-system/packages/visual-coverage-web::locator=%40noriste%2Fds-workspace%40workspace%3A."
+  peerDependencies:
+    "@preply/ds-visual-coverage-core": 1.2.1
   languageName: node
   linkType: soft
 

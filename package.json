@@ -26,7 +26,8 @@
     "publish:canary": "yarn lerna publish --canary --preid beta.$(git rev-parse HEAD) --dist-tag canary --yes"
   },
   "dependencies": {
-    "@preply/ds-visual-coverage-preply-web": "portal:../design-system/packages/visual-coverage-preply-web"
+    "@preply/ds-visual-coverage-preply-web": "portal:../design-system/packages/visual-coverage-preply-web",
+    "@preply/ds-visual-coverage-web": "portal:../design-system/packages/visual-coverage-web"
   },
   "devDependencies": {
     "@babel/core": "7.26.9",

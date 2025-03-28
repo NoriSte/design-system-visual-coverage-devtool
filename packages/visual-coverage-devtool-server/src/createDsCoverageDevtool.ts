@@ -1,23 +1,34 @@
-import { assign, createActor, setup } from 'xstate';
+import { assign, createActor, fromCallback, setup } from 'xstate';
 import type { Configuration, CoverageContainersReference } from './types';
 import { defaultConfiguration } from './config/constants';
 import { areDefaultReferencesToGlobalsAvailable } from './config/areDefaultReferencesToGlobalsAvailable';
 import { getDefaultReferencesToGlobals } from './config/getDefaultReferencesToGlobals';
 import { produce } from 'immer';
 import { getCoverageContainers } from './core/getCoverageContainers';
+import type { OnVisualCoverageUpdate, State } from '@preply/ds-visual-coverage-web';
+import {
+  createCalculateDsVisualCoverages,
+  createGetContainerData,
+} from '@preply/ds-visual-coverage-preply-web';
 
 type Events =
   | { type: 'start' }
   | { type: 'queryTheCoverageContainers' }
-  | { type: 'configure'; configuration: Configuration };
+  | { type: 'configure'; configuration: Configuration }
+  | { type: 'runDsCoverage'; onUpdate: OnVisualCoverageUpdate };
 type Context = {
   configuration: Configuration;
+  calculationState: State; // TODO: this is fully exposed for now but only the needed properties should be exposed
   coverageContainers: Array<CoverageContainersReference>;
 };
 
 export const initialContext: Context = {
   configuration: { ...defaultConfiguration },
   coverageContainers: [],
+
+  calculationState: {
+    state: 'idle',
+  },
 };
 
 export function createDsCoverageDevtool(options: {
@@ -29,6 +40,28 @@ export function createDsCoverageDevtool(options: {
   const { onUpdate } = options;
 
   const devtoolMachine = setup({
+    actors: {
+      calculateDsVisualCoverages: fromCallback<
+        Events,
+        Parameters<typeof createCalculateDsVisualCoverages>
+      >(({ input, sendBack }) => {
+        // const i = setInterval(() => {
+        //   sendBack({ type: 'reminder' });
+        // }, input.interval);
+
+        const { run, cancel } = createCalculateDsVisualCoverages(input[0]);
+
+        const onComplete = (...args) => console.log('onComplete', ...args);
+        const onError = (...args) => console.log('onError', ...args);
+        const onUpdate = (...args) => console.log('onUpdate', ...args);
+
+        run({ onComplete, onError, onUpdate });
+
+        sendBack({ type: 'helloCov' });
+
+        return cancel;
+      }),
+    },
     types: {
       context: {} as Context,
       events: {} as Events,
@@ -92,6 +125,24 @@ export function createDsCoverageDevtool(options: {
 
       configured: {
         entry: [{ type: 'queryTheCoverageContainers' }],
+        on: {
+          runDsCoverage: {
+            target: 'dsCoverageRunning',
+          },
+        },
+      },
+
+      dsCoverageRunning: {
+        invoke: {
+          src: 'calculateDsVisualCoverages',
+          input: [
+            {
+              log: true,
+              rootElement: globalThis.document.body,
+              getContainerData: createGetContainerData(),
+            },
+          ],
+        },
       },
     },
   });
@@ -126,5 +177,20 @@ export function createDsCoverageDevtool(options: {
     actor.send({ type: 'queryTheCoverageContainers' });
   }
 
-  return { getState, start, setInitialConfiguration, queryTheCoverageContainers };
+  function runDsCoverage() {
+    actor.send({
+      type: 'runDsCoverage',
+      onUpdate: (...params) => {
+        console.log('runDsCoverage', ...params);
+      },
+    });
+  }
+
+  return {
+    getState,
+    start,
+    setInitialConfiguration,
+    queryTheCoverageContainers,
+    runDsCoverage,
+  };
 }
